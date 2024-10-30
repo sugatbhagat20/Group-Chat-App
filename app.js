@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const sequelize = require("./utils/database");
 const userRoutes = require("./routes/userRoutes");
 const cors = require("cors");
-
+const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -20,6 +20,8 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+//Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, "public")));
 // Connect to the database and sync the User model
 sequelize.sync().then(() => console.log("Database synced"));
 

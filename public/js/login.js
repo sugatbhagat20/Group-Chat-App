@@ -15,6 +15,7 @@ async function logIn(e) {
     alert(response.data.message);
     console.log(response);
     localStorage.setItem("token", response.data.token);
+    window.location.href = "/views/html/index.html";
   } catch (error) {
     if (error.response) {
       const msg = error.response.data.message;
