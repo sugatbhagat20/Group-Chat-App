@@ -7,7 +7,7 @@ async function signUp(e) {
     name: document.querySelector("#name").value,
     email: document.querySelector("#email").value,
     password: document.querySelector("#password").value,
-    number: document.querySelector("#phone").value,
+    phone: document.querySelector("#phone").value,
   };
   try {
     let res;
