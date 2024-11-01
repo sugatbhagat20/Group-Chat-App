@@ -2,7 +2,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("../utils/database");
 
 const Message = sequelize.define("Message", {
-  userId: {
+  id: {
     type: Sequelize.INTEGER,
     allowNull: false,
     autoIncrement: true,

@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadMessages();
 });
 
+setInterval(() => {
+  loadMessages();
+}, 10000);
+
 async function loadMessages() {
   try {
     const response = await axios.get(
