@@ -6,8 +6,8 @@ const router = express.Router();
 const userAuthentication = require("../middleware/auth");
 router.post("/sendMessage", userAuthentication, messageController.sendMessage);
 router.get(
-  "/getAllMessages",
+  "/getNewMessages",
 
-  messageController.getAllMessages
+  messageController.getNewMessages
 );
 module.exports = router;
