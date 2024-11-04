@@ -70,3 +70,74 @@ async function loadNewMessages() {
     console.error("Error loading messages:", error);
   }
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+  loadUserGroups();
+});
+
+async function loadUserGroups() {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      "http://localhost:4000/groups/userGroups",
+      {
+        headers: { Authorization: token },
+      }
+    );
+    const groups = response.data;
+
+    const groupListContainer = document.getElementById("groupList");
+    groupListContainer.innerHTML = "";
+
+    groups.forEach((group) => {
+      const groupElement = document.createElement("button");
+      groupElement.textContent = group.groupName;
+      groupElement.onclick = () => loadGroupMessages(group.id);
+      groupListContainer.appendChild(groupElement);
+    });
+  } catch (error) {
+    console.error("Error loading groups:", error);
+  }
+}
+
+async function loadGroupMessages(groupId) {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `http://localhost:4000/groups/${groupId}/messages`,
+      {
+        headers: { Authorization: token },
+      }
+    );
+    const messages = response.data;
+
+    const messagesContainer = document.getElementById("messages");
+    messagesContainer.innerHTML = "";
+
+    messages.forEach((msg) => {
+      const messageElement = document.createElement("p");
+      messageElement.textContent = `${msg.userId}: ${msg.message}`;
+      messagesContainer.appendChild(messageElement);
+    });
+  } catch (error) {
+    console.error("Error loading messages:", error);
+  }
+}
+
+async function sendMessage(groupId) {
+  const messageInput = document.getElementById("messageInput");
+  const messageContent = messageInput.value;
+
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `http://localhost:4000/groups/${groupId}/sendMessage`,
+      { message: messageContent },
+      { headers: { Authorization: token } }
+    );
+    loadGroupMessages(groupId);
+    messageInput.value = "";
+  } catch (error) {
+    console.error("Error sending message:", error);
+  }
+}
