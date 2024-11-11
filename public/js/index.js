@@ -1,143 +1,249 @@
 const messageTextArea = document.getElementById("messageInput");
 const messageSendBtn = document.getElementById("sendButton");
 const messagesContainer = document.getElementById("messages");
+const openCreateGroupFormBtn = document.getElementById("openCreateGroupForm");
+const createGroupForm = document.getElementById("createGroupForm");
+const groupForm = document.getElementById("groupForm");
+const groupNameInput = document.getElementById("groupName");
+const addToGroupBtn = document.getElementById("addToGroup");
+let currentGroupId = null;
+const openAddToGroupFormBtn = document.getElementById("openAddToGroupForm");
+const addToGroupForm = document.getElementById("addToGroupForm");
+const addGroupForm = document.getElementById("addGroupForm");
+const addGroupNameInput = document.getElementById("addGroupName");
+const memberEmailInput = document.getElementById("memberEmail");
+// Show the group creation form when "Create Group" button is clicked
+openCreateGroupFormBtn.addEventListener("click", () => {
+  createGroupForm.style.display = "block"; // Show form
+  openCreateGroupFormBtn.style.display = "none";
+});
 
-async function messageSend() {
+openAddToGroupFormBtn.addEventListener("click", () => {
+  addToGroupForm.style.display = "block"; // Show form
+  openAddToGroupFormBtn.style.display = "none"; // Hide button
+});
+
+// Handle group creation form submission
+groupForm.addEventListener("submit", async (e) => {
+  e.preventDefault(); // Prevent page reload on form submission
+  await createGroup(); // Call the createGroup function
+  createGroupForm.style.display = "none"; // Hide form after submission
+  openCreateGroupFormBtn.style.display = "block";
+});
+
+// Handle add-to-group form submission
+addGroupForm.addEventListener("submit", async (e) => {
+  e.preventDefault(); // Prevent form submission from reloading the page
+  await addToGroup(); // Call the addToGroup function
+  memberEmailInput.value = ""; // Clear the email input field for the next member
+});
+
+// Function to create a new group
+// Create Group function using form input and adding the creator as the first member
+async function createGroup() {
   try {
-    const message = messageTextArea.value;
+    const groupName = groupNameInput.value;
     const token = localStorage.getItem("token");
-    const res = await axios.post(
-      "http://localhost:4000/message/sendMessage",
-      {
-        message: message,
-      },
+
+    // Add the creator's email automatically
+    const res = await axios.get("http://localhost:4000/user/getUser", {
+      headers: { Authorization: token },
+    });
+    const creatorEmail = res.data.email;
+    const members = [creatorEmail]; // Only the creator is added initially
+
+    // Make request to create group with the creator as the initial member
+    await axios.post(
+      "http://localhost:4000/group/createGroup",
+      { groupName, members },
       { headers: { Authorization: token } }
     );
+
+    alert(`${groupName} created successfully!`);
+    groupNameInput.value = ""; // Clear the input field
+    await getGroups(); // Update group list
   } catch (error) {
     console.log(error);
   }
 }
-messageSendBtn.addEventListener("click", messageSend);
+// Function to add users to an existing group
+async function addToGroup() {
+  try {
+    const groupName = addGroupNameInput.value.trim();
+    const memberEmail = memberEmailInput.value.trim();
+    const token = localStorage.getItem("token");
 
-// index.js
-// document.addEventListener("DOMContentLoaded", async () => {
-//   await loadMessages();
-// });
+    const res = await axios.post(
+      "http://localhost:4000/group/addToGroup",
+      { groupName, members: [memberEmail] }, // Single member in array
+      { headers: { Authorization: token } }
+    );
 
-setInterval(() => {
-  loadNewMessages();
-}, 10000);
+    alert(res.data.message);
 
+    // Optionally, update the group list if necessary
+    await getGroups();
+  } catch (error) {
+    console.log("Error adding member to group:", error);
+    alert("Failed to add member.");
+  }
+}
+// Function to load and display groups the user is part of
+async function getGroups() {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get("http://localhost:4000/group/getGroups", {
+      headers: { Authorization: token },
+    });
+
+    // Clear any existing groups from the list
+    groups.innerHTML = "";
+
+    // Check if groups are returned in the response
+    if (res.data.groups && res.data.groups.length > 0) {
+      res.data.groups.forEach((group) => {
+        const li = document.createElement("li");
+        li.classList.add("list-group-item");
+
+        // Create a span to hold the group name
+        const groupElement = document.createElement("span");
+        groupElement.textContent = group.name;
+        groupElement.classList.add("group-name");
+        groupElement.dataset.groupId = group.id; // Store group ID in data attribute
+
+        // Add click event to open group chat
+        groupElement.addEventListener("click", () => openGroupChat(group.id));
+
+        li.appendChild(groupElement);
+        groups.appendChild(li);
+      });
+    } else {
+      // Handle case where no groups are found
+      const noGroupsMessage = document.createElement("p");
+      noGroupsMessage.textContent = "You are not part of any groups.";
+      groups.appendChild(noGroupsMessage);
+    }
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    alert("Failed to load groups.");
+  }
+}
+
+// Call the function to load groups on page load
+document.addEventListener("DOMContentLoaded", getGroups);
+
+// Function to open and load group chat messages
+async function openGroupChat(groupId) {
+  if (currentGroupId === groupId) return; // Prevent reloading the same group
+  currentGroupId = groupId;
+  messagesContainer.innerHTML = ""; // Clear previous messages
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get(
+      `http://localhost:4000/message/${groupId}/messages`,
+      {
+        headers: { Authorization: token },
+      }
+    );
+    displayMessages(res.data.messages);
+  } catch (error) {
+    console.log("Error loading group chat messages:", error);
+  }
+}
+
+// Function to display messages in the chat box
+function displayMessages(messages) {
+  messagesContainer.innerHTML = "";
+  messages.forEach((msg, index) => {
+    const messageElement = document.createElement("div");
+    //messageElement.classList.add("message-text", msg.name);
+
+    // Make sender name bold and alternate colors
+    const senderElement = document.createElement("span");
+    senderElement.textContent = `${msg.name}: `;
+    senderElement.style.fontWeight = "bold";
+    senderElement.style.color = `${msg.id}` % 2 === 0 ? "#1d70b8" : "#008000"; // Alternate colors
+
+    // Add message text after the sender's name
+    const messageText = document.createTextNode(msg.message);
+
+    messageElement.appendChild(senderElement);
+    messageElement.appendChild(messageText);
+    messagesContainer.appendChild(messageElement);
+  });
+}
+// Function to send a new message
+async function messageSend() {
+  if (!currentGroupId) {
+    alert("Please select a group to send a message.");
+    return;
+  }
+
+  try {
+    const message = messageTextArea.value.trim();
+    if (!message) return; // Prevent sending empty messages
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `http://localhost:4000/message/${currentGroupId}/sendMessage`,
+      { message },
+      { headers: { Authorization: token } }
+    );
+    messageTextArea.value = ""; // Clear message input after sending
+    await loadNewMessages(); // Refresh messages after sending
+  } catch (error) {
+    console.log("Error sending message:", error);
+  }
+}
+// Add a new message to localStorage
 function addMessageToLocalStorage(message) {
   let messages = JSON.parse(localStorage.getItem("messages")) || [];
   messages.push(message);
   if (messages.length > 10) {
-    messages.shift(); // Remove the oldest message if more than 10
+    messages.shift(); // Keep only the last 10 messages
   }
   localStorage.setItem("messages", JSON.stringify(messages));
 }
 
-function displayMessages() {
+// Load and display messages from localStorage
+function displayMessagesFromLocalStorage() {
   messagesContainer.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem("messages")) || [];
   messages.forEach((msg) => {
-    const messageElement = document.createElement("p");
+    //console.log(msg);
+    const messageElement = document.createElement("div");
     messageElement.textContent = `${msg.name}: ${msg.message}`;
     messagesContainer.appendChild(messageElement);
   });
 }
 
-messageSendBtn.addEventListener("click", messageSend);
-
-document.addEventListener("DOMContentLoaded", async () => {
-  displayMessages(); // Display messages from local storage
-  await loadNewMessages(); // Load new messages from server
-});
-
+// Load new messages from the server
 async function loadNewMessages() {
   try {
+    if (!currentGroupId) return;
     const messages = JSON.parse(localStorage.getItem("messages")) || [];
     const lastMessageId = messages[messages.length - 1]?.id || 0;
-
-    const response = await axios.get(
-      `http://localhost:4000/message/getNewMessages?lastMessageId=${lastMessageId}`
-    );
-    const newMessages = response.data;
-
-    newMessages.forEach((msg) => addMessageToLocalStorage(msg));
-    displayMessages();
-  } catch (error) {
-    console.error("Error loading messages:", error);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  loadUserGroups();
-});
-
-async function loadUserGroups() {
-  try {
     const token = localStorage.getItem("token");
     const response = await axios.get(
-      "http://localhost:4000/groups/userGroups",
-      {
-        headers: { Authorization: token },
-      }
-    );
-    const groups = response.data;
-
-    const groupListContainer = document.getElementById("groupList");
-    groupListContainer.innerHTML = "";
-
-    groups.forEach((group) => {
-      const groupElement = document.createElement("button");
-      groupElement.textContent = group.groupName;
-      groupElement.onclick = () => loadGroupMessages(group.id);
-      groupListContainer.appendChild(groupElement);
-    });
-  } catch (error) {
-    console.error("Error loading groups:", error);
-  }
-}
-
-async function loadGroupMessages(groupId) {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:4000/groups/${groupId}/messages`,
-      {
-        headers: { Authorization: token },
-      }
-    );
-    const messages = response.data;
-
-    const messagesContainer = document.getElementById("messages");
-    messagesContainer.innerHTML = "";
-
-    messages.forEach((msg) => {
-      const messageElement = document.createElement("p");
-      messageElement.textContent = `${msg.userId}: ${msg.message}`;
-      messagesContainer.appendChild(messageElement);
-    });
-  } catch (error) {
-    console.error("Error loading messages:", error);
-  }
-}
-
-async function sendMessage(groupId) {
-  const messageInput = document.getElementById("messageInput");
-  const messageContent = messageInput.value;
-
-  try {
-    const token = localStorage.getItem("token");
-    await axios.post(
-      `http://localhost:4000/groups/${groupId}/sendMessage`,
-      { message: messageContent },
+      `http://localhost:4000/message/${currentGroupId}/getNewMessages?lastMessageId=${lastMessageId}`,
       { headers: { Authorization: token } }
     );
-    loadGroupMessages(groupId);
-    messageInput.value = "";
+    const newMessages = response.data;
+    newMessages.forEach((msg) => addMessageToLocalStorage(msg));
+    displayMessagesFromLocalStorage();
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Error loading new messages:", error);
   }
 }
+
+// Event listeners
+//createGroupBtn.addEventListener("click", createGroup);
+//addToGroupBtn.addEventListener("click", addToGroup);
+messageSendBtn.addEventListener("click", messageSend);
+// document.addEventListener("DOMContentLoaded", async () => {
+//   displayMessagesFromLocalStorage(); // Display messages from local storage
+//   await loadNewMessages(); // Load new messages from server
+// });
+
+// Set an interval to load new messages every 10 seconds
+//setInterval(loadNewMessages, 10000);

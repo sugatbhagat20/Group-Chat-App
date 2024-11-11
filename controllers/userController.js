@@ -64,3 +64,14 @@ exports.signup = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// userController.js
+exports.getUser = (req, res) => {
+  try {
+    // Ensure req.user is populated (usually done with authentication middleware)
+    const user = { email: req.user.email }; // Assuming req.user contains user info after authentication
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch user data" });
+  }
+};

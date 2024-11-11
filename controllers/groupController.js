@@ -1,73 +1,115 @@
-const Group = require("../models/group");
-const GroupMember = require("../models/groupMemberModel");
-const Message = require("../models/messageModel");
+const User = require("../models/userModel");
+const Group = require("../models/groupModel");
+const UserGroup = require("../models/userGroup");
+const { Op } = require("sequelize");
 
-exports.createGroup = async (req, res) => {
+// Create a new group and set the creator as admin
+exports.createGroup = async (req, res, next) => {
   try {
     const { groupName } = req.body;
-    const userId = req.user.id;
+    const adminName = req.user.name; // Assuming req.user is populated with the logged-in user's data
 
-    const newGroup = await Group.create({ groupName, createdBy: userId });
-    await GroupMember.create({ userId, groupId: newGroup.id });
+    // Create the group with the creator as admin
+    const group = await Group.create({ name: groupName, admin: adminName });
+    console.log(group);
 
-    res
-      .status(201)
-      .json({ message: "Group created successfully", group: newGroup });
+    // Add the creator to the UserGroup table with admin privileges
+    await UserGroup.create({
+      isadmin: true,
+      userId: req.user.id,
+      groupId: group.dataValues.id,
+    });
+
+    res.status(201).json({
+      message: `${groupName} created successfully!`,
+      group: group.name,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating group:", error);
     res.status(500).json({ error: "Failed to create group" });
   }
 };
 
-exports.addMember = async (req, res) => {
+// Add members to an existing group (only accessible by admins)
+exports.addToGroup = async (req, res, next) => {
   try {
-    const { groupId } = req.params;
-    const { userId } = req.body;
+    const { groupName, members } = req.body; // members is an array containing a single email
 
-    await GroupMember.create({ userId, groupId });
-    res.status(200).json({ message: "Member added successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to add member" });
-  }
-};
+    // Check if the group exists
+    const group = await Group.findOne({ where: { name: groupName } });
+    if (!group) {
+      return res.status(404).json({ message: "Group does not exist!" });
+    }
 
-exports.getUserGroups = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const groups = await Group.findAll({
-      include: [{ model: GroupMember, where: { userId } }],
+    // Check if the requester is an admin of the group
+    const isAdmin = await UserGroup.findOne({
+      where: {
+        userId: req.user.id,
+        groupId: group.id,
+        isadmin: true,
+      },
+    });
+    if (!isAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Only admins can add new members" });
+    }
+
+    // Find the user by email (expecting only one email in the `members` array)
+    const invitedMember = await User.findOne({
+      where: {
+        email: members[0], // single email expected
+      },
     });
 
-    res.status(200).json(groups);
+    // If the user is not found, return an error
+    if (!invitedMember) {
+      return res.status(404).json({ message: "User does not exist!" });
+    }
+
+    // Check if the user is already a member of the group
+    const alreadyMember = await UserGroup.findOne({
+      where: {
+        userId: invitedMember.id,
+        groupId: group.id,
+      },
+    });
+    if (alreadyMember) {
+      return res
+        .status(400)
+        .json({ message: "User is already a member of this group" });
+    }
+
+    // Add the user to the group as a non-admin
+    await UserGroup.create({
+      isadmin: false,
+      userId: invitedMember.id,
+      groupId: group.id,
+    });
+
+    res.status(201).json({ message: "Member added successfully!" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to retrieve user groups" });
+    console.error("Error adding member to group:", error);
+    res.status(500).json({ error: "Failed to add member to group" });
   }
 };
-
-exports.getGroupMessages = async (req, res) => {
+// Get groups that the user is a part of
+exports.getGroups = async (req, res, next) => {
   try {
-    const { groupId } = req.params;
-    const messages = await Message.findAll({ where: { groupId } });
+    const groups = await Group.findAll({
+      attributes: ["id", "name", "admin"], // Ensure 'id' is included
+      include: [
+        {
+          model: UserGroup,
+          where: { userId: req.user.id },
+          attributes: [], // Don't include UserGroup attributes in the response
+        },
+      ],
+    });
 
-    res.status(200).json(messages);
+    res.status(200).json({ groups });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to retrieve messages" });
-  }
-};
-
-exports.sendMessage = async (req, res) => {
-  try {
-    const { groupId } = req.params;
-    const userId = req.user.id;
-    const { message } = req.body;
-
-    const newMessage = await Message.create({ userId, groupId, message });
-    res.status(201).json({ message: "Message sent", newMessage });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to send message" });
+    console.error("Error retrieving groups:", error);
+    res.status(500).json({ error: "Failed to retrieve groups" });
   }
 };

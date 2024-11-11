@@ -1,0 +1,170 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #e7ebee;
+  color: #333;
+}
+
+/* Container */
+.container {
+  display: flex;
+  height: 100vh;
+  background-color: #e7ebee;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 25%;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 20px;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+  color: #0088cc;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+#groupsList {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.list-group-item {
+  padding: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border: none;
+}
+
+.list-group-item:hover,
+.list-group-item.active {
+  background-color: #f0f2f5;
+}
+
+/* Chat Container */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  width: 75%;
+}
+
+.chat-window {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-left: 1px solid #e0e0e0;
+}
+
+/* Chat Messages */
+.message {
+  padding: 15px;
+  overflow-y: auto;
+  flex-grow: 1;
+  background-color: #f5f7f9;
+}
+
+.message-text {
+  display: inline-block;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  max-width: 70%;
+  font-size: 0.9em;
+}
+
+.received .message-text {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+.sent .message-text {
+  background-color: #daf8cb;
+  align-self: flex-end;
+}
+
+/* Footer Input */
+.footer {
+  padding: 10px;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+}
+
+#messageInput {
+  flex-grow: 1;
+  padding: 8px 15px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  outline: none;
+  font-size: 0.9em;
+  margin-right: 10px;
+}
+
+#sendButton {
+  background-color: #0084ff;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#sendButton:hover {
+  background-color: #006bbf;
+}
+
+/* Hidden Group Forms */
+#openCreateGroupForm,
+#openAddToGroupForm {
+  margin: 10px;
+  background-color: #259b25;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+#openCreateGroupForm:hover,
+#openAddToGroupForm:hover {
+  background-color: #006400; /* Darker green for hover effect */
+}
+
+#addToGroupForm,
+#createGroupForm {
+  padding: 15px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+button[type="submit"] {
+  background-color: #0084ff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+button[type="submit"]:hover {
+  background-color: #006bbf;
+}

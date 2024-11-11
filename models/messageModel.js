@@ -2,11 +2,21 @@ const Sequelize = require("sequelize");
 const sequelize = require("../utils/database");
 
 const Message = sequelize.define("Message", {
-  id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
-  userId: { type: Sequelize.INTEGER, allowNull: false },
-  groupId: { type: Sequelize.INTEGER, allowNull: false },
-  message: { type: Sequelize.TEXT, allowNull: false },
-  timestamp: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+
+  name: {
+    type: Sequelize.STRING,
+  },
+
+  message: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
 });
 
 module.exports = Message;
