@@ -14,8 +14,12 @@ body {
 /* Container */
 .container {
   display: flex;
+  width: 85%; /* Adjust width as needed */
+  max-width: 1200px;
+  margin: 0 auto;
   height: 100vh;
-  background-color: #e7ebee;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
 }
 
 /* Sidebar */
@@ -167,4 +171,35 @@ button[type="submit"] {
 
 button[type="submit"]:hover {
   background-color: #006bbf;
+}
+
+.selected-group {
+  background-color: #000000; /* Black background */
+  color: #ffffff; /* White text */
+}
+
+#groupMembers {
+  margin-top: auto; /* Pushes group members to the bottom */
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+}
+
+.list-members {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Style group members */
+.list-members li {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list-members button {
+  font-size: 12px;
+  padding: 2px 6px;
+  margin-left: 5px;
 }

@@ -4,6 +4,7 @@ const Group = require("../models/groupModel");
 const UserGroup = require("../models/userGroup"); // Ensure you have a model to represent the user-group relation
 
 // Controller to send a message to a group
+
 exports.sendMessage = async (req, res) => {
   try {
     const { message } = req.body; // Removed groupName, we will use groupId from params

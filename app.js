@@ -13,15 +13,17 @@ const Message = require("./models/messageModel");
 const Group = require("./models/groupModel");
 const UserGroup = require("./models/userGroup");
 
-// Middleware
-app.use(
-  cors({
+const http = require("http");
+//const { Server } = require("socket.io");
+const server = http.createServer(app);
+const io = require(socket.io)({
+  cors: {
     origin: "http://127.0.0.1:5500", // Replace with your frontend URL
     methods: "GET,POST,DELETE",
     credentials: true, // Allow credentials (cookies, authorization headers)
-  })
-); // Use CORS middleware
-
+  },
+  // Use CORS middleware
+});
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

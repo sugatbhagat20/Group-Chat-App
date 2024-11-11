@@ -13,6 +13,9 @@ const addGroupForm = document.getElementById("addGroupForm");
 const addGroupNameInput = document.getElementById("addGroupName");
 const memberEmailInput = document.getElementById("memberEmail");
 // Show the group creation form when "Create Group" button is clicked
+
+const socket = io("http://localhost:4000");
+
 openCreateGroupFormBtn.addEventListener("click", () => {
   createGroupForm.style.display = "block"; // Show form
   openCreateGroupFormBtn.style.display = "none";
@@ -138,6 +141,19 @@ async function openGroupChat(groupId) {
   currentGroupId = groupId;
   messagesContainer.innerHTML = ""; // Clear previous messages
 
+  // Remove the 'selected-group' class from all groups
+  document.querySelectorAll("#groups .group-name").forEach((groupElement) => {
+    groupElement.classList.remove("selected-group");
+  });
+
+  // Add the 'selected-group' class to the clicked group
+  const selectedGroupElement = document.querySelector(
+    `#groups .group-name[data-group-id="${groupId}"]`
+  );
+  if (selectedGroupElement) {
+    selectedGroupElement.classList.add("selected-group");
+  }
+
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
@@ -147,6 +163,7 @@ async function openGroupChat(groupId) {
       }
     );
     displayMessages(res.data.messages);
+    await loadGroupMembers(groupId);
   } catch (error) {
     console.log("Error loading group chat messages:", error);
   }
@@ -236,6 +253,49 @@ async function loadNewMessages() {
   }
 }
 
+async function loadGroupMembers(groupId) {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `http://localhost:4000/group/${groupId}/members`,
+      {
+        headers: { Authorization: token },
+      }
+    );
+    const members = response.data.members;
+    displayGroupMembers(members, groupId);
+  } catch (error) {
+    console.error("Error fetching group members:", error);
+  }
+}
+
+function displayGroupMembers(members, groupId) {
+  const membersContainer = document.getElementById("members");
+  membersContainer.innerHTML = ""; // Clear existing members
+
+  members.forEach((member) => {
+    const memberItem = document.createElement("li");
+    memberItem.classList.add("list-group-item");
+    memberItem.textContent = `${member.name}`;
+
+    // "Make Admin" button
+    const makeAdminButton = document.createElement("button");
+    makeAdminButton.textContent = "Make Admin";
+    makeAdminButton.classList.add("btn", "btn-primary", "btn-sm", "mx-2");
+    makeAdminButton.onclick = () => makeAdmin(groupId, member.id);
+
+    // "Delete Member" button
+    const deleteMemberButton = document.createElement("button");
+    deleteMemberButton.textContent = "Delete Member";
+    deleteMemberButton.classList.add("btn", "btn-danger", "btn-sm");
+    deleteMemberButton.onclick = () => deleteMember(groupId, member.id);
+
+    // Append buttons to the member item
+    memberItem.appendChild(makeAdminButton);
+    memberItem.appendChild(deleteMemberButton);
+    membersContainer.appendChild(memberItem);
+  });
+}
 // Event listeners
 //createGroupBtn.addEventListener("click", createGroup);
 //addToGroupBtn.addEventListener("click", addToGroup);
@@ -247,3 +307,41 @@ messageSendBtn.addEventListener("click", messageSend);
 
 // Set an interval to load new messages every 10 seconds
 //setInterval(loadNewMessages, 10000);
+
+async function makeAdmin(groupId, memberId) {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `http://localhost:4000/group/${groupId}/makeAdmin`,
+      { memberId },
+      { headers: { Authorization: token } }
+    );
+    alert("Member made an admin successfully.");
+    loadGroupMembers(groupId); // Refresh the members list
+  } catch (error) {
+    console.error("Error making member an admin:", error);
+    alert("Failed to make member an admin.");
+  }
+}
+
+// Function to delete a member from the group
+async function deleteMember(groupId, memberId) {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(
+      `http://localhost:4000/group/${groupId}/member/${memberId}`,
+      {
+        headers: { Authorization: token },
+      }
+    );
+    alert("Member deleted successfully.");
+    loadGroupMembers(groupId); // Refresh the members list
+  } catch (error) {
+    console.error("Error deleting member:", error);
+    alert("Failed to delete member.");
+  }
+}
+
+// Example of calling the function when switching to a group
+// Replace groupId with the ID of the selected group
+// loadGroupMembers(groupId);

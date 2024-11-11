@@ -113,3 +113,76 @@ exports.getGroups = async (req, res, next) => {
     res.status(500).json({ error: "Failed to retrieve groups" });
   }
 };
+
+exports.getGroupMembers = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    // Find the members of the group
+    const members = await User.findAll({
+      include: [
+        {
+          model: UserGroup,
+          where: { groupId },
+          attributes: ["isAdmin"], // Assuming `isAdmin` field in UserGroup model
+        },
+      ],
+      attributes: ["id", "name", "email"], // Only fetch necessary fields
+    });
+
+    res.status(200).json({ members });
+  } catch (error) {
+    console.error("Error fetching group members:", error);
+    res.status(500).json({ error: "Failed to fetch group members" });
+  }
+};
+
+exports.makeAdmin = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { memberId } = req.body;
+
+    // Find the UserGroup entry and update the role
+    const userGroup = await UserGroup.findOne({
+      where: { groupId, userId: memberId },
+    });
+
+    if (!userGroup) {
+      return res
+        .status(404)
+        .json({ message: "Member not found in this group" });
+    }
+
+    userGroup.isAdmin = true; // Assuming `isAdmin` is a boolean field in UserGroup
+    await userGroup.save();
+
+    res.status(200).json({ message: "Member made an admin successfully" });
+  } catch (error) {
+    console.error("Error making member an admin:", error);
+    res.status(500).json({ error: "Failed to make member an admin" });
+  }
+};
+
+// Controller to delete a member from a group
+exports.deleteMember = async (req, res) => {
+  try {
+    const { groupId, memberId } = req.params;
+
+    // Check if the user is part of the group
+    const userGroup = await UserGroup.findOne({
+      where: { groupId, userId: memberId },
+    });
+
+    if (!userGroup) {
+      return res
+        .status(404)
+        .json({ message: "Member not found in this group" });
+    }
+
+    await userGroup.destroy(); // Remove the member from the group
+    res.status(200).json({ message: "Member deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting member:", error);
+    res.status(500).json({ error: "Failed to delete member" });
+  }
+};
