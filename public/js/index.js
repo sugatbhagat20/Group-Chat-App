@@ -164,6 +164,8 @@ async function openGroupChat(groupId) {
     );
     displayMessages(res.data.messages);
     await loadGroupMembers(groupId);
+    // Join the selected group room for real-time updates
+    socket.emit("joinGroup", groupId);
   } catch (error) {
     console.log("Error loading group chat messages:", error);
   }
@@ -201,17 +203,22 @@ async function messageSend() {
     const message = messageTextArea.value.trim();
     if (!message) return; // Prevent sending empty messages
     const token = localStorage.getItem("token");
-    await axios.post(
-      `http://localhost:4000/message/${currentGroupId}/sendMessage`,
-      { message },
-      { headers: { Authorization: token } }
-    );
+    socket.emit("sendMessage", { message, groupId: currentGroupId, token });
     messageTextArea.value = ""; // Clear message input after sending
     await loadNewMessages(); // Refresh messages after sending
   } catch (error) {
     console.log("Error sending message:", error);
   }
 }
+
+// Listen for new messages from the server
+socket.on("newMessage", (message) => {
+  if (message.groupId === currentGroupId) {
+    addMessageToLocalStorage(message);
+    displayMessagesFromLocalStorage();
+  }
+});
+
 // Add a new message to localStorage
 function addMessageToLocalStorage(message) {
   let messages = JSON.parse(localStorage.getItem("messages")) || [];

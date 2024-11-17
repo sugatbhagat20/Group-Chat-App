@@ -3,11 +3,13 @@ const Sequelize = require("sequelize");
 const Group = require("../models/groupModel");
 const UserGroup = require("../models/userGroup"); // Ensure you have a model to represent the user-group relation
 
-// Controller to send a message to a group
+// Import io from your server setup if it's not globally accessible
+const { io } = require("../app"); // Adjust the path if necessary
 
+// Controller to send a message to a group
 exports.sendMessage = async (req, res) => {
   try {
-    const { message } = req.body; // Removed groupName, we will use groupId from params
+    const { message } = req.body;
     const { groupId } = req.params; // Get the groupId from the URL parameter
 
     // Find the group by ID (not name)
@@ -36,6 +38,15 @@ exports.sendMessage = async (req, res) => {
       message: message,
       name: req.user.name, // Ensure req.user.name is available
       groupId: group.id,
+    });
+
+    // Emit the new message to all members of the group using Socket.IO
+    io.to(group.id).emit("receiveMessage", {
+      userId: newMessage.userId,
+      message: newMessage.message,
+      name: newMessage.name,
+      groupId: newMessage.groupId,
+      createdAt: newMessage.createdAt,
     });
 
     res.status(201).json({ message: "Message sent successfully", newMessage });
